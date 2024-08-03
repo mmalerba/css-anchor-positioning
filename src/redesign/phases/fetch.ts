@@ -12,6 +12,8 @@ export interface CssSource {
   css: string;
   /** The URL of the stylesheet */
   url?: URL;
+  /** Whether the CSS is dirty and needs to be synced back to the DOM. */
+  dirty?: boolean;
 }
 
 /** Fetch all style sources for the given selector. */
