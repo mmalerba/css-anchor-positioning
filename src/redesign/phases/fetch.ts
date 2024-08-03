@@ -1,20 +1,7 @@
-import { UUID_ATTR } from '../const.js';
 import { allSettled, fetchData, isFulfilled } from '../utils/async.js';
+import { UUID_ATTRIBUTE } from '../utils/const.js';
+import type { CssSource } from '../utils/types.js';
 import { makeUuid } from '../utils/uuid.js';
-
-/** Represents a source of CSS styles applied to the document. */
-export interface CssSource {
-  /** The element the styles come from */
-  element: HTMLElement;
-  /** A unique identifier for these styles */
-  uuid: string;
-  /** The CSS text of the styles */
-  css: string;
-  /** The URL of the stylesheet */
-  url?: URL;
-  /** Whether the CSS is dirty and needs to be synced back to the DOM. */
-  dirty?: boolean;
-}
 
 /** Fetch all style sources for the given selector. */
 export async function fetchCssSources(
@@ -50,7 +37,7 @@ function fetchInlineCssSource(element: HTMLElement): CssSource | null {
   return {
     element,
     uuid,
-    css: `[${UUID_ATTR}="${uuid}"] { ${styles} }`,
+    css: `[${UUID_ATTRIBUTE}="${uuid}"] { ${styles} }`,
   };
 }
 

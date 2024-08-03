@@ -1,7 +1,7 @@
 import fetchMock from 'fetch-mock';
 
-import { UUID_ATTR } from '../../../src/redesign/const.js';
 import { fetchCssSources } from '../../../src/redesign/phases/fetch.js';
+import { UUID_ATTRIBUTE } from '../../../src/redesign/utils/const.js';
 import { getSampleCSS } from '../../helpers.js';
 
 describe('fetchCssSources', () => {
@@ -32,7 +32,7 @@ describe('fetchCssSources', () => {
     document.body.innerHTML = `<div style="color: red"></div>`;
     const cssSources = await fetchCssSources();
     expect(cssSources).toHaveLength(1);
-    expect(cssSources[0].css).includes(`[${UUID_ATTR}=`);
+    expect(cssSources[0].css).includes(`[${UUID_ATTRIBUTE}=`);
   });
 
   it('skips tags with no styles', async () => {
@@ -61,7 +61,7 @@ describe('fetchCssSources', () => {
     expect(cssSources.map(({ css }) => css)).toEqual([
       'div {color: red}',
       css,
-      expect.stringContaining(`[${UUID_ATTR}=`),
+      expect.stringContaining(`[${UUID_ATTRIBUTE}=`),
       'span {right: 0}',
     ]);
   });

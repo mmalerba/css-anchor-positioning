@@ -1,5 +1,5 @@
-import { POLYFILLED_PROPERTIES } from '../../../src/redesign/const.js';
 import { preprocessCss } from '../../../src/redesign/phases/preprocess.js';
+import { POLYFILLED_PROPERTIES } from '../../../src/redesign/utils/const.js';
 import { createCssSource } from './helpers.js';
 
 describe('preprocessCss', () => {
@@ -16,13 +16,13 @@ describe('preprocessCss', () => {
     const dirty = preprocessCss([source]);
     expect(dirty).toBe(true);
     expect(source.css).toContain(
-      `${POLYFILLED_PROPERTIES['anchor-name'].customProperty}:--test`,
+      `${POLYFILLED_PROPERTIES.get('anchor-name')?.customProperty}:--test`,
     );
     expect(source.css).toContain(
-      `${POLYFILLED_PROPERTIES['anchor-scope'].customProperty}:--test`,
+      `${POLYFILLED_PROPERTIES.get('anchor-scope')?.customProperty}:--test`,
     );
     expect(source.css).toContain(
-      `${POLYFILLED_PROPERTIES['position-anchor'].customProperty}:--test`,
+      `${POLYFILLED_PROPERTIES.get('position-anchor')?.customProperty}:--test`,
     );
   });
 
