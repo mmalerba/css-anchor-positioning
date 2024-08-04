@@ -1,23 +1,71 @@
 import * as csstree from 'css-tree';
 
-import { clone, generateCss, getAST } from '../utils/ast.js';
+import {
+  clone,
+  generateCss,
+  getAST,
+  isPseudoElementSelector,
+  isSelector,
+  isSelectorList,
+} from '../utils/ast.js';
 import { POLYFILLED_PROPERTIES } from '../utils/const.js';
-import type { CssSource, PolyfilledProperty } from '../utils/types.js';
+import type {
+  CssSource,
+  PolyfilledProperty,
+  Selector,
+} from '../utils/types.js';
+import { makeUuid, Uuid } from '../utils/uuid.js';
+
+/** Result data from preprocessing. */
+export interface PreprocessingResult {
+  /** Map of polyfilled properties to selectors that declare them. */
+  polyfilledPropertySelectors: Map<PolyfilledProperty, Selector[]>;
+  /** Map of selector uuid to selector for all parsed selectors. */
+  selectors: Map<Uuid, Selector>;
+}
 
 /**
- * Preprocess the CSS by polyfilling all properties that are not natively
- * supported with custom properties.
+ * Prerpocesses the given CSS sources by.
+ *
+ * Polyfills unsupported properties by transfering their values into custom
+ * properties. This may leave the sources in a dirty state.
+ *
+ * Parses and collects selectors that declare polyfilled properties.
  */
-export function preprocessCss(sources: CssSource[]): boolean {
+export function preprocessSources(sources: CssSource[]): PreprocessingResult {
+  const ruleSelectors = new Map<csstree.Rule, Selector[]>();
+  const polyfilledPropertySelectors = new Map<PolyfilledProperty, Selector[]>();
+  const selectors = new Map<Uuid, Selector>();
   for (const source of sources) {
     let dirty = false;
     const ast = getAST(source.css);
     csstree.walk(ast, {
       visit: 'Declaration',
-      enter(node) {
-        const block = this.rule?.block;
-        if (block) {
-          dirty = polyfillUnsupportedProperties(node, block) || dirty;
+      enter: function (node) {
+        const property = node.property as PolyfilledProperty;
+        if (
+          POLYFILLED_PROPERTIES.has(property) &&
+          this.rule &&
+          this.rule.block &&
+          isSelectorList(this.rule.prelude)
+        ) {
+          dirty = true;
+
+          // Parse and cache the selector for this rule.
+          const parsedSelectors =
+            ruleSelectors.get(this.rule) ?? parseSelectors(this.rule.prelude);
+          ruleSelectors.set(this.rule, parsedSelectors);
+          for (const selector of parsedSelectors) {
+            // Polyfill the property.
+            polyfillProperty(node, this.rule.block, selector.uuid);
+
+            // Record that this selector contains the polyfilled property.
+            selectors.set(selector.uuid, selector);
+            const propertySelectors =
+              polyfilledPropertySelectors.get(property) ?? [];
+            propertySelectors.push(selector);
+            polyfilledPropertySelectors.set(property, propertySelectors);
+          }
         }
       },
     });
@@ -27,28 +75,64 @@ export function preprocessCss(sources: CssSource[]): boolean {
       source.dirty = true;
     }
   }
-  return sources.some((source) => source.dirty);
+  return { selectors, polyfilledPropertySelectors };
 }
 
-/**
- * Shift property declarations for properties that are not yet natively
- * supported into custom properties.
- */
-function polyfillUnsupportedProperties(
+/** Parses a list of CSS selectors from the given AST. */
+function parseSelectors(selectorList: csstree.SelectorList): Selector[] {
+  const selectors: Selector[] = [];
+  for (const selector of selectorList.children) {
+    if (!isSelector(selector)) {
+      continue;
+    }
+    let pseudoElement: csstree.CssNode | undefined;
+    let element: csstree.CssNode | undefined;
+
+    // Check if the last part of the selector is a pseudo-selector.
+    const last = selector.children.last;
+    if (last && isPseudoElementSelector(last)) {
+      pseudoElement = last;
+      element = clone(selector);
+      element.children.pop();
+    }
+
+    const full = generateCss(selector);
+    const elementPart = element ? generateCss(element) : full;
+    const pseudoPart = pseudoElement ? generateCss(pseudoElement) : undefined;
+    selectors.push({
+      uuid: makeUuid(),
+      full,
+      elementPart,
+      ...(pseudoPart ? { pseudoPart } : {}),
+    });
+  }
+  return selectors;
+}
+
+/** Polyfills a given property by shifting its value into a custom property. */
+function polyfillProperty(
   node: csstree.Declaration,
   block: csstree.Block,
+  selectorUuid: Uuid,
 ) {
-  const { customProperty, inherit } =
-    POLYFILLED_PROPERTIES.get(node.property as PolyfilledProperty) || {};
-  if (!customProperty) {
-    return false;
-  }
-
+  // Add the polyfill custom property.
+  const { customProperty, inherit } = POLYFILLED_PROPERTIES.get(
+    node.property as PolyfilledProperty,
+  )!;
   block.children.appendData(clone(node, { property: customProperty }));
+
+  // If this property is not supposed to be inherited, record the selector that
+  // declared the polyfill custom property in a separate custom property. This
+  // will allow us to later verify that the computed value is not inherited.
   if (!inherit) {
-    // TODO: add a property we can use to verify the value was not inherited.
-    //  Probably need to run this after the parse phase where we've linked our
-    //  selectors to uuids.
+    block.children.appendData(
+      clone(node, {
+        property: `${customProperty}-selector`,
+        value: {
+          type: 'Raw',
+          value: selectorUuid,
+        },
+      }),
+    );
   }
-  return true;
 }

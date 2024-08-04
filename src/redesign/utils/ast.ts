@@ -40,6 +40,11 @@ export function isSelectorList(
   return node.type === 'SelectorList';
 }
 
+/** Checks if the given node is a selector. */
+export function isSelector(node: csstree.CssNode): node is csstree.Selector {
+  return node.type === 'Selector';
+}
+
 /** Checks if the given node is a pseudo-element selector. */
 export function isPseudoElementSelector(
   node: csstree.CssNode,
