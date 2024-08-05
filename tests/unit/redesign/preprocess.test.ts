@@ -84,7 +84,7 @@ describe('preprocessSources', () => {
   it('should parse complex selectors', () => {
     const source = createCssSource(`
       .el + button:focus::before, .other:not(#id [attr])::after {
-        anchor-name: --test1;
+        anchor-name: --test;
       }
     `);
     const { selectors } = preprocessSources([source]);
@@ -100,6 +100,24 @@ describe('preprocessSources', () => {
         full: '.other:not(#id [attr])::after',
         elementPart: '.other:not(#id [attr])',
         pseudoPart: '::after',
+      },
+    ]);
+  });
+
+  it('should parse selectors insider at-rules', () => {
+    const source = createCssSource(`
+      @media print {
+        .anchor {
+          anchor-name: --test;
+        }
+      }
+    `);
+    const { selectors } = preprocessSources([source]);
+    expect([...selectors.values()]).toEqual([
+      {
+        uuid: expect.any(String),
+        full: '.anchor',
+        elementPart: '.anchor',
       },
     ]);
   });

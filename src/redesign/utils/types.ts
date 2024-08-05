@@ -1,10 +1,22 @@
+import type {
+  INSET_PROPERTIES,
+  POLYFILLED_PROPERTIES,
+  SIZING_PROPERTIES,
+} from './const.js';
 import type { Uuid } from './uuid.js';
+
+/** A dashed CSS identifier. */
+export type DashedIdent = `--${string}`;
 
 /** CSS properties that we polyfill. */
 export type PolyfilledProperty =
-  | 'anchor-name'
-  | 'anchor-scope'
-  | 'position-anchor';
+  typeof POLYFILLED_PROPERTIES extends Map<infer K, any> ? K : never;
+
+/** A property used to specify an inset. */
+export type InsetProperty = (typeof INSET_PROPERTIES)[number];
+
+/** A property used to specify a size. */
+export type SizingProperty = (typeof SIZING_PROPERTIES)[number];
 
 /** Data needed to polyfill a property with a custom property. */
 export interface PolyfilledPropertyData {
