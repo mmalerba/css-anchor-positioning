@@ -13,6 +13,8 @@ export type UuidAttribute = `data-${string}-${Uuid}`;
 /** A unique CSS property. */
 export type UuidCssProperty = `${DashedIdent}-${Uuid}`;
 
+export type UuidCssId = `${string}-${Uuid}`;
+
 /** Create a unique id. */
 export function makeUuid(): Uuid {
   return `${UUID_PREFIX}${nextId++}`;
@@ -24,6 +26,10 @@ export function makeAttribute(name: string): UuidAttribute {
 }
 
 /** Create a unique CSS property name. */
-export function makeProperty(name: string): UuidCssProperty {
+export function makeCssProperty(name: string): UuidCssProperty {
   return `--${name}-${makeUuid()}`;
+}
+
+export function makeCssId(name: string): UuidCssId {
+  return `${name}-${makeUuid()}`;
 }

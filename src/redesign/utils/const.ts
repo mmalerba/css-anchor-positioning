@@ -1,5 +1,5 @@
 import { PolyfilledPropertyData } from './types.js';
-import { makeAttribute, makeProperty } from './uuid.js';
+import { makeAttribute, makeCssProperty } from './uuid.js';
 
 /** Attribute used to link an element to a uuid. */
 export const UUID_ATTRIBUTE = makeAttribute('uuid');
@@ -49,7 +49,9 @@ export const POLYFILLED_PROPERTIES = new Map([
       (property) =>
         [
           property,
-          { customProperty: makeProperty(property) } as PolyfilledPropertyData,
+          {
+            customProperty: makeCssProperty(property),
+          } as PolyfilledPropertyData,
         ] as const,
     ),
   ...INHERITED_ANCHOR_PROPERTIES.map(
@@ -57,7 +59,7 @@ export const POLYFILLED_PROPERTIES = new Map([
       [
         property,
         {
-          customProperty: makeProperty(property),
+          customProperty: makeCssProperty(property),
           inherit: true,
         } as PolyfilledPropertyData,
       ] as const,

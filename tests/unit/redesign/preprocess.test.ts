@@ -122,6 +122,23 @@ describe('preprocessSources', () => {
     ]);
   });
 
+  it('should parse selector with pseudo-element', () => {
+    const source = createCssSource(`
+      .anchor::before {
+        anchor-name: --test;
+      }
+    `);
+    const { selectors } = preprocessSources([source]);
+    expect([...selectors.values()]).toEqual([
+      {
+        uuid: expect.any(String),
+        full: '.anchor::before',
+        elementPart: '.anchor',
+        pseudoPart: '::before',
+      },
+    ]);
+  });
+
   it('should transfer unsupported properties to custom properties', () => {
     const source = createCssSource(`
       .anchor {
