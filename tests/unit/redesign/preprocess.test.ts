@@ -1,5 +1,5 @@
-import { preprocessSources } from '../../../src/redesign/phases/preprocess.js';
-import { POLYFILLED_PROPERTIES } from '../../../src/redesign/utils/const.js';
+import { preprocessSources } from '../../../src/redesign/preprocess.js';
+import { POLYFILLED_PROPERTIES } from '../../../src/redesign/utils/properties.js';
 import { createCssSource } from './helpers.js';
 
 const ANCHOR_NAME_PROP =

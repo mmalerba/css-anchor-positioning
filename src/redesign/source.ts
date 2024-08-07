@@ -1,13 +1,31 @@
-import { allSettled, fetchData, isFulfilled } from '../utils/async.js';
-import { UUID_ATTRIBUTE } from '../utils/const.js';
-import type { CssSource } from '../utils/types.js';
-import { makeUuid } from '../utils/uuid.js';
+import { fetchData, isFulfilled } from './utils/async.js';
+import { makeAttribute, makeUuid, type Uuid } from './utils/uuid.js';
+
+/**
+ * Represents a source of CSS styles, such as a `<style>` or `<link>` tag, or
+ * `style` attribute.
+ */
+export interface CssSource {
+  /** The element the styles come from */
+  element: HTMLElement;
+  /** A unique identifier for these styles */
+  uuid: Uuid;
+  /** The CSS text of the styles */
+  css: string;
+  /** The URL of the stylesheet */
+  url?: URL;
+  /** Whether the CSS is dirty and needs to be synced back to the DOM. */
+  dirty?: boolean;
+}
+
+/** Attribute that links an element with inline styles to its CssSource. */
+export const INLINE_STYLES_ATTRIBUTE = makeAttribute('inline-styles');
 
 /** Fetch all style sources for the given selector. */
 export async function readCssSources(
   selector = 'style,link,[style]',
 ): Promise<CssSource[]> {
-  const sources = await allSettled(
+  const sources = await Promise.allSettled(
     [...document.querySelectorAll<HTMLElement>(selector)].map((element) => {
       if (element instanceof HTMLLinkElement) {
         return readLinkedCssSource(element);
@@ -24,6 +42,7 @@ export async function readCssSources(
     .filter((value) => value !== null);
 }
 
+/** Writes the given CSS sources back to the DOM if they are dirty. */
 export async function writeCssSources(sources: CssSource[]) {
   for (const source of sources) {
     const { element } = source;
@@ -50,7 +69,7 @@ function readInlineCssSource(element: HTMLElement): CssSource | null {
   return {
     element,
     uuid,
-    css: `[${UUID_ATTRIBUTE}="${uuid}"] { ${styles} }`,
+    css: `[${INLINE_STYLES_ATTRIBUTE}="${uuid}"] { ${styles} }`,
   };
 }
 
@@ -102,6 +121,7 @@ function writeInlineCssSource(source: CssSource) {
     'style',
     css.slice(css.indexOf('{') + 1, css.lastIndexOf('}')).trim(),
   );
+  element.setAttribute(INLINE_STYLES_ATTRIBUTE, source.uuid);
 }
 
 /** Writes a CSS source for a `<style>` element back to the DOM. */

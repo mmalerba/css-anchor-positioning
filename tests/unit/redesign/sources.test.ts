@@ -1,10 +1,10 @@
 import fetchMock from 'fetch-mock';
 
 import {
+  INLINE_STYLES_ATTRIBUTE,
   readCssSources,
   writeCssSources,
-} from '../../../src/redesign/phases/sources.js';
-import { UUID_ATTRIBUTE } from '../../../src/redesign/utils/const.js';
+} from '../../../src/redesign/source.js';
 import { getSampleCSS } from '../../helpers.js';
 
 describe('readCssSources', () => {
@@ -36,7 +36,7 @@ describe('readCssSources', () => {
     document.body.innerHTML = `<div style="color: red"></div>`;
     const cssSources = await readCssSources();
     expect(cssSources).toHaveLength(1);
-    expect(cssSources[0].css).includes(`[${UUID_ATTRIBUTE}=`);
+    expect(cssSources[0].css).includes(`[${INLINE_STYLES_ATTRIBUTE}=`);
   });
 
   it('skips reading tags with no styles', async () => {
@@ -66,7 +66,7 @@ describe('readCssSources', () => {
     expect(cssSources.map(({ css }) => css)).toEqual([
       'div {color: red}',
       css,
-      expect.stringContaining(`[${UUID_ATTRIBUTE}=`),
+      expect.stringContaining(`[${INLINE_STYLES_ATTRIBUTE}=`),
       'span {right: 0}',
     ]);
   });

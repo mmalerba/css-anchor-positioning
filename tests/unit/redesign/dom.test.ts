@@ -1,6 +1,9 @@
-import { Dom, PseudoElement } from '../../../src/redesign/utils/dom.js';
-import { Selector } from '../../../src/redesign/utils/types.js';
-import { makeUuid, Uuid } from '../../../src/redesign/utils/uuid.js';
+import {
+  Dom,
+  type PseudoElement,
+  type Selector,
+} from '../../../src/redesign/dom.js';
+import { makeUuid, type Uuid } from '../../../src/redesign/utils/uuid.js';
 
 describe('matchesSelector', () => {
   it('should compare element with element selector', () => {

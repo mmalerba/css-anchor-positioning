@@ -1,9 +1,26 @@
 import { type VirtualElement } from '@floating-ui/dom';
-import { POLYFILLED_PROPERTIES } from './const.js';
-import type { PolyfilledProperty, Selector } from './types.js';
-import { makeCssId, Uuid, UUID_PREFIX } from './uuid.js';
+import {
+  POLYFILLED_PROPERTIES,
+  type PolyfilledProperty,
+} from './utils/properties.js';
+import { makeCssId, type Uuid, UUID_PREFIX } from './utils/uuid.js';
 
+/** Represents a CSS selector with element and pseudo-element parts. */
+export interface Selector {
+  /** Unique identifier for this selector. */
+  uuid: Uuid;
+  /** The full selector text. */
+  full: string;
+  /** The selector text for the element part of the selector. */
+  elementPart: string;
+  /** The selector text for the pseudo-element part of the selector. */
+  pseudoPart?: string;
+}
+
+/** The id for the fake-pseudo element styles tag. */
 const FAKE_PSEUDO_ELEMENT_STYLES_ID = makeCssId('fake-pseudo-element-styles');
+
+/** The CSS class applied to all fake pseudo-elements. */
 const FAKE_PSEUDO_ELEMENT_CLASS = makeCssId('fake-pseudo-element');
 
 /** Used instead of an HTMLElement as a handle for pseudo-elements. */
@@ -265,15 +282,12 @@ export class Dom {
    */
   private findFirstScrollingElement(element: HTMLElement) {
     let currentElement: HTMLElement | null = element;
-
     while (currentElement) {
       if (this.getCssPopertyValue(currentElement, 'overflow') === 'scroll') {
         return currentElement;
       }
-
       currentElement = currentElement.parentElement;
     }
-
-    return currentElement;
+    return null;
   }
 }

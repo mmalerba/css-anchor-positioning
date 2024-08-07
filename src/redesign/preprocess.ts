@@ -1,5 +1,7 @@
 import * as csstree from 'css-tree';
 
+import { type Selector } from './dom.js';
+import { type CssSource } from './source.js';
 import {
   addUuidToValue,
   clone,
@@ -8,14 +10,12 @@ import {
   isPseudoElementSelector,
   isSelector,
   isSelectorList,
-} from '../utils/ast.js';
-import { POLYFILLED_PROPERTIES } from '../utils/const.js';
-import type {
-  CssSource,
-  PolyfilledProperty,
-  Selector,
-} from '../utils/types.js';
-import { makeUuid, Uuid } from '../utils/uuid.js';
+} from './utils/ast.js';
+import {
+  POLYFILLED_PROPERTIES,
+  type PolyfilledProperty,
+} from './utils/properties.js';
+import { makeUuid, type Uuid } from './utils/uuid.js';
 
 /** Result data from preprocessing. */
 export interface PreprocessingResult {

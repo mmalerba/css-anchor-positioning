@@ -1,8 +1,25 @@
-import { PolyfilledPropertyData } from './types.js';
-import { makeAttribute, makeCssProperty } from './uuid.js';
+import { makeCssProperty } from './uuid.js';
 
-/** Attribute used to link an element to a uuid. */
-export const UUID_ATTRIBUTE = makeAttribute('uuid');
+/** A dashed CSS identifier. */
+export type DashedIdent = `--${string}`;
+
+/** CSS properties that we polyfill. */
+export type PolyfilledProperty =
+  typeof POLYFILLED_PROPERTIES extends Map<infer K, any> ? K : never;
+
+/** A property used to specify an inset. */
+export type InsetProperty = (typeof INSET_PROPERTIES)[number];
+
+/** A property used to specify a size. */
+export type SizingProperty = (typeof SIZING_PROPERTIES)[number];
+
+/** Data needed to polyfill a property with a custom property. */
+export interface PolyfilledPropertyConfig {
+  /** Custom property that the property's value is shifted into. */
+  customProperty: string;
+  /** Whether the property should be inherited down the DOM. */
+  inherit?: boolean;
+}
 
 /** List of properties used to specify insets. */
 export const INSET_PROPERTIES = [
@@ -51,7 +68,7 @@ export const POLYFILLED_PROPERTIES = new Map([
           property,
           {
             customProperty: makeCssProperty(property),
-          } as PolyfilledPropertyData,
+          } as PolyfilledPropertyConfig,
         ] as const,
     ),
   ...INHERITED_ANCHOR_PROPERTIES.map(
@@ -61,7 +78,7 @@ export const POLYFILLED_PROPERTIES = new Map([
         {
           customProperty: makeCssProperty(property),
           inherit: true,
-        } as PolyfilledPropertyData,
+        } as PolyfilledPropertyConfig,
       ] as const,
   ),
 ]);

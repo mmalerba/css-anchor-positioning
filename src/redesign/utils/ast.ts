@@ -1,5 +1,5 @@
 import * as csstree from 'css-tree';
-import { Uuid } from './uuid.js';
+import { type Uuid } from './uuid.js';
 
 /** Gets the AST for the given CSS. */
 export function getAST(cssText: string) {
@@ -27,6 +27,7 @@ export function clone<T extends csstree.CssNode>(
   return csstree.fromPlainObject({ ...plain, ...override }) as T;
 }
 
+/** Adds a Uuid on to a CSS property value. */
 export function addUuidToValue(value: csstree.Value | csstree.Raw, uuid: Uuid) {
   if (value.type === 'Raw') {
     value.value = `${value.value} ${uuid}`;

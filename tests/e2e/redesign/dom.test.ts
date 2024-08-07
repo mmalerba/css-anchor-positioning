@@ -1,8 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
-import { preprocessSources } from '../../../src/redesign/phases/preprocess.js';
-import { Dom } from '../../../src/redesign/utils/dom.js';
-import type { Selector } from '../../../src/redesign/utils/types.js';
-import { Uuid } from '../../../src/redesign/utils/uuid.js';
+import { Dom, type Selector } from '../../../src/redesign/dom.js';
+import { preprocessSources } from '../../../src/redesign/preprocess.js';
+import { type Uuid } from '../../../src/redesign/utils/uuid.js';
 import { createCssSource } from '../../unit/redesign/helpers.js';
 
 interface LocalWindow extends Window {
@@ -31,7 +30,7 @@ test.beforeAll(async ({ browser }) => {
   await page.addScriptTag({
     type: 'module',
     content: `
-      import { Dom } from '../../../src/redesign/utils/dom.ts';
+      import { Dom } from '../../../src/redesign/dom.ts';
       window.Dom = Dom;
     `,
   });
