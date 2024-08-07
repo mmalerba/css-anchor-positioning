@@ -2,18 +2,20 @@ import { DashedIdent } from './types.js';
 
 let nextId = 0;
 
+export const UUID_PREFIX = '⚓' as const;
+
 /** A unique identifier. */
-export type Uuid = `odd-ap${string}`;
+export type Uuid = `${typeof UUID_PREFIX}${number}`;
 
 /** A unique html attribute. */
 export type UuidAttribute = `data-${string}-${Uuid}`;
 
 /** A unique CSS property. */
-export type UuidCssProperty = `${DashedIdent}${Uuid}`;
+export type UuidCssProperty = `${DashedIdent}-${Uuid}`;
 
 /** Create a unique id. */
 export function makeUuid(): Uuid {
-  return `odd-ap${nextId++}`;
+  return `${UUID_PREFIX}${nextId++}`;
 }
 
 /** Create a unique attribute name. */

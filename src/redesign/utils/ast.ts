@@ -1,4 +1,5 @@
 import * as csstree from 'css-tree';
+import { Uuid } from './uuid.js';
 
 /** Gets the AST for the given CSS. */
 export function getAST(cssText: string) {
@@ -24,6 +25,17 @@ export function clone<T extends csstree.CssNode>(
 ) {
   const plain = csstree.toPlainObject(node);
   return csstree.fromPlainObject({ ...plain, ...override }) as T;
+}
+
+export function addUuidToValue(value: csstree.Value | csstree.Raw, uuid: Uuid) {
+  if (value.type === 'Raw') {
+    value.value = `${value.value} ${uuid}`;
+  } else {
+    value.children.appendData({
+      type: 'Identifier',
+      name: `${uuid}`,
+    });
+  }
 }
 
 /** Checks if the given node is a declaration. */

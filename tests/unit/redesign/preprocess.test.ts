@@ -148,7 +148,7 @@ describe('preprocessSources', () => {
     const { selectors } = preprocessSources([source]);
     const [uuid] = selectors.keys();
     expect(source.dirty).toBe(true);
-    expect(source.css).toContain(`${ANCHOR_NAME_PROP}-selector:${uuid}`);
+    expect(source.css).toContain(`${ANCHOR_NAME_PROP}:--test ${uuid}`);
   });
 
   it('should not mark the selector that declared an inherited polyfilled property', () => {

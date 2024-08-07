@@ -1,6 +1,6 @@
 import { POLYFILLED_PROPERTIES } from './const.js';
 import type { PolyfilledProperty, Selector } from './types.js';
-import { Uuid } from './uuid.js';
+import { Uuid, UUID_PREFIX } from './uuid.js';
 
 /** Class for working with the DOM in a polyfill-aware way. */
 export class Dom {
@@ -13,17 +13,17 @@ export class Dom {
       property as PolyfilledProperty,
     ) ?? { customProperty: property, inherit: true };
     const computedStyle = getComputedStyle(element);
-    const computedValue = computedStyle.getPropertyValue(customProperty).trim();
+    const [computedValue, id] = computedStyle
+      .getPropertyValue(customProperty)
+      .trim()
+      .split(` ${UUID_PREFIX}`);
     if (inherit) {
       return computedValue;
     }
 
     // If the property is not inherited, verify that the selector the value came
     // from actually selects this element.
-    const selectorProperty = `${customProperty}-selector`;
-    const uuid = computedStyle
-      .getPropertyValue(selectorProperty)
-      .trim() as Uuid;
+    const uuid = `${UUID_PREFIX}${id}` as Uuid;
     const selector = this.selectors.get(uuid);
     if (selector && element.matches(selector.full)) {
       return computedValue;

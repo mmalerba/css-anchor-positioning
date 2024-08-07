@@ -1,6 +1,7 @@
 import * as csstree from 'css-tree';
 
 import {
+  addUuidToValue,
   clone,
   generateCss,
   getAST,
@@ -119,20 +120,14 @@ function polyfillProperty(
   const { customProperty, inherit } = POLYFILLED_PROPERTIES.get(
     node.property as PolyfilledProperty,
   )!;
-  block.children.appendData(clone(node, { property: customProperty }));
+  const value = clone(node.value);
 
   // If this property is not supposed to be inherited, record the selector that
-  // declared the polyfill custom property in a separate custom property. This
-  // will allow us to later verify that the computed value is not inherited.
+  // declared the polyfill custom property as part of the value. This will allow
+  // us to later verify that the computed value is not inherited.
   if (!inherit) {
-    block.children.appendData(
-      clone(node, {
-        property: `${customProperty}-selector`,
-        value: {
-          type: 'Raw',
-          value: selectorUuid,
-        },
-      }),
-    );
+    addUuidToValue(value, selectorUuid);
   }
+
+  block.children.appendData(clone(node, { property: customProperty, value }));
 }
