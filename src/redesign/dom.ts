@@ -1,6 +1,6 @@
 import { type VirtualElement } from '@floating-ui/dom';
 import {
-  POLYFILLED_PROPERTIES,
+  POLYFILL_CONFIG_BY_PROPERTY,
   type PolyfilledProperty,
 } from './utils/properties.js';
 import { makeCssId, type Uuid, UUID_PREFIX } from './utils/uuid.js';
@@ -39,16 +39,18 @@ export interface PseudoElement extends VirtualElement {
 export class Dom {
   constructor(
     /** Map of uuid to selector for all known selectors. */
-    private selectors: Map<Uuid, Selector>,
+    private selectorsByUuid: Map<Uuid, Selector>,
   ) {}
 
   /** Map of selector uuid to elements selected by that selector. */
-  private elements: Map<Uuid, (HTMLElement | PseudoElement)[]> | undefined;
+  private elementsBySelector:
+    | Map<Selector, (HTMLElement | PseudoElement)[]>
+    | undefined;
 
   /** Gets the computed value of a CSS property. */
   getCssPopertyValue(element: HTMLElement | PseudoElement, property: string) {
     // Read the computed value from the polyfilled custom property.
-    const { customProperty, inherit } = POLYFILLED_PROPERTIES.get(
+    const { customProperty, inherit } = POLYFILL_CONFIG_BY_PROPERTY.get(
       property as PolyfilledProperty,
     ) ?? { customProperty: property, inherit: true };
     const [computedValue, selectorId] = this.getComputedStyle(element)
@@ -62,7 +64,7 @@ export class Dom {
     // If the property is not inherited, verify that the selector the value came
     // from actually selects this element.
     const uuid = `${UUID_PREFIX}${selectorId}` as Uuid;
-    const selector = this.selectors.get(uuid);
+    const selector = this.selectorsByUuid.get(uuid);
     if (selector && this.matchesSelector(element, selector)) {
       return computedValue;
     }
@@ -83,11 +85,11 @@ export class Dom {
   /**
    * Gets a mapping of all selector uuids to elements selected by that selector.
    */
-  getAllPolyfilledElements(): Map<Uuid, (HTMLElement | PseudoElement)[]> {
-    if (!this.elements) {
+  getAllPolyfilledElements(): Map<Selector, (HTMLElement | PseudoElement)[]> {
+    if (!this.elementsBySelector) {
       throw Error('Must create fake pseudo-elements first.');
     }
-    return this.elements;
+    return this.elementsBySelector;
   }
 
   /**
@@ -95,16 +97,16 @@ export class Dom {
    * selectors with polyfilled properties.
    */
   createFakePseudoElements() {
-    if (this.elements) {
+    if (this.elementsBySelector) {
       return;
     }
 
     // Get all the elements. For pseudo-elements, get their host real element
     // for now, we'll replace them once we create the fake pseudo-elements.
-    this.elements = new Map();
+    this.elementsBySelector = new Map();
     const pseudoSelectors: (Selector & { pseudoPart: string })[] = [];
-    for (const [uuid, selector] of this.selectors) {
-      this.elements.set(uuid, [
+    for (const [uuid, selector] of this.selectorsByUuid) {
+      this.elementsBySelector.set(selector, [
         ...document.querySelectorAll<HTMLElement>(selector.elementPart),
       ]);
       if (selector.pseudoPart) {
@@ -114,26 +116,28 @@ export class Dom {
 
     // Create the fake pseudo-elements, tracking which psuedo-parts have been
     // created for each element, so we don't double create any.
-    const fakePseudoElements = new Map<HTMLElement, PseudoElement[]>();
+    const pseudoElementsByElement = new Map<HTMLElement, PseudoElement[]>();
     for (const selector of pseudoSelectors) {
       const elements =
-        (this.elements.get(selector.uuid) as HTMLElement[]) ?? [];
+        (this.elementsBySelector.get(selector) as HTMLElement[]) ?? [];
       for (const element of elements) {
-        const pseudos = fakePseudoElements.get(element) ?? [];
+        const pseudoElements = pseudoElementsByElement.get(element) ?? [];
         if (
-          !pseudos.find(({ pseudoPart }) => pseudoPart === selector.pseudoPart)
+          !pseudoElements.find(
+            ({ pseudoPart }) => pseudoPart === selector.pseudoPart,
+          )
         ) {
-          pseudos.push(
+          pseudoElements.push(
             this.createFakePseudoElement(element, selector.pseudoPart),
           );
         }
-        fakePseudoElements.set(element as HTMLElement, pseudos);
+        pseudoElementsByElement.set(element, pseudoElements);
       }
     }
 
     // Create styles to mirror the pseudo-elements `content` property, and hide
     // the real pseudo-elements.
-    const fakePseudoElementList = [...fakePseudoElements.values()].flat();
+    const fakePseudoElementList = [...pseudoElementsByElement.values()].flat();
     const styles = fakePseudoElementList.map(
       ({ fakePseudoElement, pseudoPart, computedStyle }) =>
         `#${fakePseudoElement.id}${pseudoPart} { content: ${computedStyle.content}; }`,
@@ -160,27 +164,27 @@ export class Dom {
 
     // Replace the host elements with the fake pseudo-elements in our internal
     // record.
-    for (const [uuid, { pseudoPart }] of this.selectors) {
-      if (!pseudoPart) {
+    for (const [uuid, selector] of this.selectorsByUuid) {
+      if (!selector.pseudoPart) {
         continue;
       }
-      const hostElements = this.elements.get(uuid) ?? [];
+      const hostElements = this.elementsBySelector.get(selector) ?? [];
       const pseudoElements = hostElements
         .map((element) => {
           const fakePseudoElement =
-            fakePseudoElements.get(element as HTMLElement) ?? [];
+            pseudoElementsByElement.get(element as HTMLElement) ?? [];
           return fakePseudoElement.find(
-            (pseudo) => pseudo.pseudoPart === pseudoPart,
+            (pseudoEl) => pseudoEl.pseudoPart === selector.pseudoPart,
           );
         })
         .filter((element): element is PseudoElement => !!element);
-      this.elements.set(uuid, pseudoElements);
+      this.elementsBySelector.set(selector, pseudoElements);
     }
   }
 
   /** Removes all fake-pseudo elements. */
   removeFakePseudoElements() {
-    if (!this.elements) {
+    if (!this.elementsBySelector) {
       return;
     }
     document
@@ -188,7 +192,7 @@ export class Dom {
         `.${FAKE_PSEUDO_ELEMENT_CLASS},#${FAKE_PSEUDO_ELEMENT_STYLES_ID}`,
       )
       .forEach((element) => element.remove());
-    this.elements = undefined;
+    this.elementsBySelector = undefined;
   }
 
   /** Gets the computed styles for the given element. */

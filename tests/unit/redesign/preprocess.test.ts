@@ -1,13 +1,13 @@
 import { preprocessSources } from '../../../src/redesign/preprocess.js';
-import { POLYFILLED_PROPERTIES } from '../../../src/redesign/utils/properties.js';
+import { POLYFILL_CONFIG_BY_PROPERTY } from '../../../src/redesign/utils/properties.js';
 import { createCssSource } from './helpers.js';
 
 const ANCHOR_NAME_PROP =
-  POLYFILLED_PROPERTIES.get('anchor-name')?.customProperty;
+  POLYFILL_CONFIG_BY_PROPERTY.get('anchor-name')?.customProperty;
 const ANCHOR_SCOPE_PROP =
-  POLYFILLED_PROPERTIES.get('anchor-scope')?.customProperty;
+  POLYFILL_CONFIG_BY_PROPERTY.get('anchor-scope')?.customProperty;
 const POSITION_ANCHOR_PROP =
-  POLYFILLED_PROPERTIES.get('position-anchor')?.customProperty;
+  POLYFILL_CONFIG_BY_PROPERTY.get('position-anchor')?.customProperty;
 
 describe('preprocessSources', () => {
   it('should collect selectors that declare polyfilled properties', () => {
@@ -20,7 +20,8 @@ describe('preprocessSources', () => {
         anchor-name: --test2;
       }
     `);
-    const { polyfilledPropertySelectors } = preprocessSources([source]);
+    const { selectorsByProperty: polyfilledPropertySelectors } =
+      preprocessSources([source]);
     expect(Object.fromEntries(polyfilledPropertySelectors.entries())).toEqual({
       'anchor-name': [
         {
@@ -50,7 +51,8 @@ describe('preprocessSources', () => {
         color: red;
       }
     `);
-    const { polyfilledPropertySelectors } = preprocessSources([source]);
+    const { selectorsByProperty: polyfilledPropertySelectors } =
+      preprocessSources([source]);
     expect(polyfilledPropertySelectors.size).toBe(0);
   });
 
@@ -66,7 +68,7 @@ describe('preprocessSources', () => {
         color: red;
       }
     `);
-    const { selectors } = preprocessSources([source]);
+    const { selectorsByUuid: selectors } = preprocessSources([source]);
     expect([...selectors.values()]).toEqual([
       {
         uuid: expect.any(String),
@@ -87,7 +89,7 @@ describe('preprocessSources', () => {
         anchor-name: --test;
       }
     `);
-    const { selectors } = preprocessSources([source]);
+    const { selectorsByUuid: selectors } = preprocessSources([source]);
     expect([...selectors.values()]).toEqual([
       {
         uuid: expect.any(String),
@@ -112,7 +114,7 @@ describe('preprocessSources', () => {
         }
       }
     `);
-    const { selectors } = preprocessSources([source]);
+    const { selectorsByUuid: selectors } = preprocessSources([source]);
     expect([...selectors.values()]).toEqual([
       {
         uuid: expect.any(String),
@@ -128,7 +130,7 @@ describe('preprocessSources', () => {
         anchor-name: --test;
       }
     `);
-    const { selectors } = preprocessSources([source]);
+    const { selectorsByUuid: selectors } = preprocessSources([source]);
     expect([...selectors.values()]).toEqual([
       {
         uuid: expect.any(String),
@@ -162,7 +164,7 @@ describe('preprocessSources', () => {
         anchor-name: --test;
       }
     `);
-    const { selectors } = preprocessSources([source]);
+    const { selectorsByUuid: selectors } = preprocessSources([source]);
     const [uuid] = selectors.keys();
     expect(source.dirty).toBe(true);
     expect(source.css).toContain(`${ANCHOR_NAME_PROP}:--test ${uuid}`);

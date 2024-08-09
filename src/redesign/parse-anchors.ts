@@ -15,6 +15,7 @@ import {
   ANCHOR_SIDE_VALUES,
   ANCHOR_SIZE_VALUES,
   AnchorName,
+  AnchorScope,
   AnchorSide,
   AnchorSideKeyword,
   AnchorSize,
@@ -27,14 +28,16 @@ const ANCHOR_FUNCTION_NAME = 'anchor';
 /** The name of the `anchor-size()` function. */
 const ANCHOR_SIZE_FUNCTION_NAME = 'anchor-size';
 
+type AnchorSpecifier = AnchorName | 'implicit';
+
 /** Represents an instance of the `anchor()` functiom. */
 interface AnchorFunction {
   /** The name of the function. */
   functionName: typeof ANCHOR_FUNCTION_NAME;
   /** The property used as a placeholder for the resolved function value. */
   customProperty: UuidCssProperty;
-  /** The name of the anchor passed to the function. */
-  anchorName: AnchorName;
+  /** The anchor specifier passed to the function. */
+  anchorSpecifier: AnchorSpecifier;
   /** The side passed to the function. */
   side: AnchorSide;
   /** The fallback value for the function. */
@@ -47,8 +50,8 @@ interface AnchorSizeFunction {
   functionName: typeof ANCHOR_SIZE_FUNCTION_NAME;
   /** The property used as a placeholder for the resolved function value. */
   customProperty: UuidCssProperty;
-  /** The name of the anchor passed to the function */
-  anchorName: AnchorName;
+  /** The anchor specifier passed to the function. */
+  anchorSpecifier: AnchorSpecifier;
   /** The size passed to the function. */
   size: AnchorSize;
   /** The fallback value for the function. */
@@ -56,7 +59,7 @@ interface AnchorSizeFunction {
 }
 
 /** Represents a value containing one or more anchor functions. */
-interface ValueWithAnchorFunctions {
+export interface ValueWithAnchorFunctions {
   /**
    * A polyfilled version of the property value, where the anchor functions are
    * replaced with CSS custom property placeholders. This allows updating the
@@ -71,7 +74,9 @@ interface ValueWithAnchorFunctions {
  * Parse all the anchor functions out of a value. Returns null if no valid
  * anchor functions are found.
  */
-function parseAnchorFunctions(value: string): ValueWithAnchorFunctions | null {
+export function parseAnchorFunctions(
+  value: string,
+): ValueWithAnchorFunctions | null {
   // Quick check to see if we should bother parsing.
   if (
     !(
@@ -136,9 +141,10 @@ function parseAnchorFunction(
   const fallbackValueNode = children.map(generateCss).join('');
 
   // Parse the anchor function arguments.
-  const name = args[1] === undefined ? 'implicit' : parseAnchorName(args[0]);
+  const anchorSpecifier =
+    args[1] === undefined ? 'implicit' : parseAnchorSpecifier(args[0]);
   const sideOrSizeNode = args[1] === undefined ? args[0] : args[1];
-  if (!name) {
+  if (!anchorSpecifier) {
     return null;
   }
 
@@ -148,7 +154,7 @@ function parseAnchorFunction(
     if (side) {
       return {
         functionName: ANCHOR_FUNCTION_NAME,
-        anchorName: name,
+        anchorSpecifier,
         customProperty: makeCssProperty(ANCHOR_FUNCTION_NAME),
         side,
         fallbackValue: fallbackValueNode,
@@ -159,7 +165,7 @@ function parseAnchorFunction(
     if (size) {
       return {
         functionName: ANCHOR_SIZE_FUNCTION_NAME,
-        anchorName: name,
+        anchorSpecifier,
         customProperty: makeCssProperty(ANCHOR_SIZE_FUNCTION_NAME),
         size,
         fallbackValue: fallbackValueNode,
@@ -171,16 +177,16 @@ function parseAnchorFunction(
 }
 
 /**
- * Parse an anchor name from the given node. Returns null if a valid anchor name
- * cannot be parsed.
+ * Parse an anchor specifier from the given node. Returns null if a valid anchor
+ * spceifier cannot be parsed.
  */
-function parseAnchorName(node: csstree.CssNode): AnchorName | null {
+function parseAnchorSpecifier(node: csstree.CssNode): AnchorSpecifier | null {
   if (
     node &&
     isIdentifier(node) &&
-    (node.name.startsWith('--') || node.name === 'implicit')
+    (isValidAnchorName(node.name) || node.name === 'implicit')
   ) {
-    return node.name as AnchorName;
+    return node.name;
   }
   return null;
 }
@@ -226,4 +232,12 @@ function isPercentCalc(
       ((isFunction(child, 'calc') || isParentheses(child)) &&
         isPercentCalc(child)),
   );
+}
+
+export function isValidAnchorName(name: string): name is AnchorName {
+  return name.startsWith('--') || name === 'none';
+}
+
+export function isValidAnchorScope(scope: string): scope is AnchorScope {
+  return scope.startsWith('--') || scope === 'all' || scope === 'none';
 }

@@ -6,15 +6,17 @@ export async function run() {
   // Preprocess the CSS, shifting properties that need to be polyfilled into
   // custom properties.
   const sources = await readCssSources();
-  const { selectors, polyfilledPropertySelectors } = preprocessSources(sources);
+  const { selectorsByUuid, selectorsByProperty } = preprocessSources(sources);
   await writeCssSources(sources);
 
   // Prepare the DOM by creating placeholders for pseudo-elements.
-  const dom = new Dom(selectors);
+  const dom = new Dom(selectorsByUuid);
   dom.createFakePseudoElements();
-  const elements = dom.getAllPolyfilledElements();
+  const elementsBySelector = dom.getAllPolyfilledElements();
 
-  // Parse anchors
+  // Parse anchors -- NOTE: I think it makes more sense to move this into
+  //   pre-processing, so we don't reparse the same value from the same selector
+  //   over and over on multiple elements.
   // Resolve anchors
   // Position elements
 }

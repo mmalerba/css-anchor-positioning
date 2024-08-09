@@ -13,7 +13,7 @@ export type Percent = `${number}%`;
 export type CalcExpression = `calc(${string})`;
 
 /** CSS properties that we polyfill. */
-export type PolyfilledProperty = KeyType<typeof POLYFILLED_PROPERTIES>;
+export type PolyfilledProperty = KeyType<typeof POLYFILL_CONFIG_BY_PROPERTY>;
 
 /** A property used to specify an inset. */
 export type InsetProperty = KeyType<typeof INSET_PROPERTIES>;
@@ -22,7 +22,10 @@ export type InsetProperty = KeyType<typeof INSET_PROPERTIES>;
 export type SizingProperty = KeyType<typeof SIZING_PROPERTIES>;
 
 /** An anchor name. */
-export type AnchorName = DashedIdent | 'implicit';
+export type AnchorName = DashedIdent | 'none';
+
+/** An anchor name. */
+export type AnchorScope = DashedIdent | 'all' | 'none';
 
 /** A keyword value for the `anchor()` function side parameter */
 export type AnchorSideKeyword = KeyType<typeof ANCHOR_SIDE_VALUES>;
@@ -102,7 +105,7 @@ const NON_INHERITED_ANCHOR_PROPERTIES = [
  * Map of CSS properties that we polyfill, either to support unknown properties
  * or unknown property values.
  */
-export const POLYFILLED_PROPERTIES = new Map(
+export const POLYFILL_CONFIG_BY_PROPERTY = new Map(
   [
     [
       ...INSET_PROPERTIES,
