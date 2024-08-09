@@ -3,13 +3,13 @@ import * as csstree from 'css-tree';
 import { type Selector } from './dom.js';
 import { type CssSource } from './source.js';
 import {
-  addUuidToValue,
+  addToValue,
   clone,
   generateCss,
-  getAST,
   isPseudoElementSelector,
   isSelector,
   isSelectorList,
+  parseCss,
 } from './utils/ast.js';
 import {
   POLYFILLED_PROPERTIES,
@@ -39,7 +39,7 @@ export function preprocessSources(sources: CssSource[]): PreprocessingResult {
   const selectors = new Map<Uuid, Selector>();
   for (const source of sources) {
     let dirty = false;
-    const ast = getAST(source.css);
+    const ast = parseCss(source.css);
     csstree.walk(ast, {
       visit: 'Declaration',
       enter: function (node) {
@@ -126,7 +126,7 @@ function polyfillProperty(
   // declared the polyfill custom property as part of the value. This will allow
   // us to later verify that the computed value is not inherited.
   if (!inherit) {
-    addUuidToValue(value, selectorUuid);
+    addToValue(value, selectorUuid);
   }
 
   block.children.appendData(clone(node, { property: customProperty, value }));

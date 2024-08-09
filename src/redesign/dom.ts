@@ -80,6 +80,9 @@ export class Dom {
     );
   }
 
+  /**
+   * Gets a mapping of all selector uuids to elements selected by that selector.
+   */
   getAllPolyfilledElements(): Map<Uuid, (HTMLElement | PseudoElement)[]> {
     if (!this.elements) {
       throw Error('Must create fake pseudo-elements first.');
