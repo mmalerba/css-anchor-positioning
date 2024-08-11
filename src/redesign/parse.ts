@@ -14,21 +14,24 @@ import {
 import {
   ANCHOR_SIDE_VALUES,
   ANCHOR_SIZE_VALUES,
-  AnchorName,
-  AnchorScope,
   AnchorSide,
   AnchorSideKeyword,
   AnchorSize,
+  AnchorSpecifier,
+  isAnchorName,
 } from './utils/properties.js';
-import { makeCssProperty, type UuidCssProperty } from './utils/uuid.js';
+import {
+  makeCssProperty,
+  makeUuid,
+  Uuid,
+  type UuidCssProperty,
+} from './utils/uuid.js';
 
 /** The name of the `anchor()` function. */
 const ANCHOR_FUNCTION_NAME = 'anchor';
 
 /** The name of the `anchor-size()` function. */
 const ANCHOR_SIZE_FUNCTION_NAME = 'anchor-size';
-
-type AnchorSpecifier = AnchorName | 'implicit';
 
 /** Represents an instance of the `anchor()` functiom. */
 interface AnchorFunction {
@@ -60,6 +63,8 @@ interface AnchorSizeFunction {
 
 /** Represents a value containing one or more anchor functions. */
 export interface ValueWithAnchorFunctions {
+  /** A unique identifier for this parsed value. */
+  uuid: Uuid;
   /**
    * A polyfilled version of the property value, where the anchor functions are
    * replaced with CSS custom property placeholders. This allows updating the
@@ -75,22 +80,13 @@ export interface ValueWithAnchorFunctions {
  * anchor functions are found.
  */
 export function parseAnchorFunctions(
-  value: string,
+  value: string | csstree.Value | csstree.Raw,
 ): ValueWithAnchorFunctions | null {
-  // Quick check to see if we should bother parsing.
-  if (
-    !(
-      value.includes(`${ANCHOR_FUNCTION_NAME}(`) ||
-      value.includes(`${ANCHOR_SIZE_FUNCTION_NAME}(`)
-    )
-  ) {
-    return null;
-  }
-
-  const ast = parseCssValue(value);
+  const ast = typeof value === 'string' ? parseCssValue(value) : value;
   if (isValue(ast)) {
     const valueWithAnchors: ValueWithAnchorFunctions = {
-      polyfilledValue: value,
+      uuid: makeUuid(),
+      polyfilledValue: '',
       anchorFunctions: [],
     };
     csstree.walk(ast, {
@@ -138,7 +134,8 @@ function parseAnchorFunction(
 
   // Remove the comma operator and serialize the fallback value.
   children.shift();
-  const fallbackValueNode = children.map(generateCss).join('');
+  const fallbackValue = children.map(generateCss).join('');
+  const fallbackData = fallbackValue ? { fallbackValue } : '';
 
   // Parse the anchor function arguments.
   const anchorSpecifier =
@@ -157,7 +154,7 @@ function parseAnchorFunction(
         anchorSpecifier,
         customProperty: makeCssProperty(ANCHOR_FUNCTION_NAME),
         side,
-        fallbackValue: fallbackValueNode,
+        ...fallbackData,
       };
     }
   } else if (node.name === ANCHOR_SIZE_FUNCTION_NAME) {
@@ -168,7 +165,7 @@ function parseAnchorFunction(
         anchorSpecifier,
         customProperty: makeCssProperty(ANCHOR_SIZE_FUNCTION_NAME),
         size,
-        fallbackValue: fallbackValueNode,
+        ...fallbackData,
       };
     }
   }
@@ -184,7 +181,7 @@ function parseAnchorSpecifier(node: csstree.CssNode): AnchorSpecifier | null {
   if (
     node &&
     isIdentifier(node) &&
-    (isValidAnchorName(node.name) || node.name === 'implicit')
+    (isAnchorName(node.name) || node.name === 'implicit')
   ) {
     return node.name;
   }
@@ -232,12 +229,4 @@ function isPercentCalc(
       ((isFunction(child, 'calc') || isParentheses(child)) &&
         isPercentCalc(child)),
   );
-}
-
-export function isValidAnchorName(name: string): name is AnchorName {
-  return name.startsWith('--') || name === 'none';
-}
-
-export function isValidAnchorScope(scope: string): scope is AnchorScope {
-  return scope.startsWith('--') || scope === 'all' || scope === 'none';
 }

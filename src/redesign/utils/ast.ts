@@ -41,18 +41,6 @@ export function replace(node: csstree.CssNode, replacement: csstree.CssNode) {
   Object.assign(node, replacement);
 }
 
-/** Adds a Uuid on to a CSS property value. */
-export function addToValue(value: csstree.Value | csstree.Raw, add: string) {
-  if (value.type === 'Raw') {
-    value.value = `${value.value} ${add}`;
-  } else {
-    value.children.appendData({
-      type: 'Raw',
-      value: add,
-    });
-  }
-}
-
 /** Checks if the given node is an operator. */
 export function isOperator(
   node: csstree.CssNode,

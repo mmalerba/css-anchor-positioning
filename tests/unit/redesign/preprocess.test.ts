@@ -1,13 +1,13 @@
-import { preprocessSources } from '../../../src/redesign/preprocess.js';
-import { POLYFILL_CONFIG_BY_PROPERTY } from '../../../src/redesign/utils/properties.js';
+import {
+  METADATA_DELIMETER,
+  preprocessSources,
+} from '../../../src/redesign/preprocess.js';
+import { POLYFILLED_PROPERTIES } from '../../../src/redesign/utils/properties.js';
 import { createCssSource } from './helpers.js';
 
-const ANCHOR_NAME_PROP =
-  POLYFILL_CONFIG_BY_PROPERTY.get('anchor-name')?.customProperty;
-const ANCHOR_SCOPE_PROP =
-  POLYFILL_CONFIG_BY_PROPERTY.get('anchor-scope')?.customProperty;
-const POSITION_ANCHOR_PROP =
-  POLYFILL_CONFIG_BY_PROPERTY.get('position-anchor')?.customProperty;
+const ANCHOR_NAME_PROP = POLYFILLED_PROPERTIES.get('anchor-name');
+const ANCHOR_SCOPE_PROP = POLYFILLED_PROPERTIES.get('anchor-scope');
+const POSITION_ANCHOR_PROP = POLYFILLED_PROPERTIES.get('position-anchor');
 
 describe('preprocessSources', () => {
   it('should collect selectors that declare polyfilled properties', () => {
@@ -141,7 +141,7 @@ describe('preprocessSources', () => {
     ]);
   });
 
-  it('should transfer unsupported properties to custom properties', () => {
+  it('should copy unsupported properties to custom properties', () => {
     const source = createCssSource(`
       .anchor {
         anchor-name: --test;
@@ -158,29 +158,6 @@ describe('preprocessSources', () => {
     expect(source.css).toContain(`${POSITION_ANCHOR_PROP}:--test`);
   });
 
-  it('should mark the selector that declared a non-inherited polyfilled property', () => {
-    const source = createCssSource(`
-      .anchor {
-        anchor-name: --test;
-      }
-    `);
-    const { selectorsByUuid: selectors } = preprocessSources([source]);
-    const [uuid] = selectors.keys();
-    expect(source.dirty).toBe(true);
-    expect(source.css).toContain(`${ANCHOR_NAME_PROP}:--test ${uuid}`);
-  });
-
-  it('should not mark the selector that declared an inherited polyfilled property', () => {
-    const source = createCssSource(`
-      .anchor {
-        position-anchor: --test;
-      }
-    `);
-    preprocessSources([source]);
-    expect(source.dirty).toBe(true);
-    expect(source.css).not.toContain(`${POSITION_ANCHOR_PROP}-selector:`);
-  });
-
   it('should not change CSS that does not declare unsupported properties', () => {
     const css = `
       .some-el {
@@ -191,5 +168,71 @@ describe('preprocessSources', () => {
     preprocessSources([source]);
     expect(source.dirty).toBeFalsy();
     expect(source.css).toBe(css);
+  });
+
+  it('should parse static anchor functions', () => {
+    const source = createCssSource(`
+      .positioned {
+        left: anchor(--anchor top);
+      }
+    `);
+    const { anchorValuesByUuid } = preprocessSources([source]);
+    expect([...anchorValuesByUuid.values()]).toEqual([
+      {
+        uuid: expect.any(String),
+        polyfilledValue: expect.any(String),
+        anchorFunctions: [
+          {
+            functionName: 'anchor',
+            customProperty: expect.any(String),
+            anchorSpecifier: '--anchor',
+            side: 'top',
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('should not parse dyanmic anchor functions', () => {
+    const source = createCssSource(`
+      .positioned {
+        left: anchor(--anchor var(--side));
+      }
+    `);
+    const { anchorValuesByUuid } = preprocessSources([source]);
+    expect([...anchorValuesByUuid.values()]).toEqual([]);
+  });
+
+  it('should add reference to parsed selectors in metadata', () => {
+    const source = createCssSource(`
+      .anchor {
+        anchor-name: --test;
+      }
+    `);
+    const { selectorsByUuid } = preprocessSources([source]);
+    const [uuid] = selectorsByUuid.keys();
+    expect(source.dirty).toBe(true);
+    expect(source.css).toContain(` selector${METADATA_DELIMETER}${uuid}`);
+  });
+
+  it('should add reference to parsed anchors in metadata', () => {
+    const source = createCssSource(`
+      .positioned {
+        left: anchor(--anchor top);
+      }
+    `);
+    const { anchorValuesByUuid } = preprocessSources([source]);
+    const [uuid] = anchorValuesByUuid.keys();
+    expect(source.css).toContain(` parsed${METADATA_DELIMETER}${uuid}`);
+  });
+
+  it('should note dynamic values in metadata', () => {
+    const source = createCssSource(`
+      .anchor {
+        anchor-name: var(--name);
+      }
+    `);
+    preprocessSources([source]);
+    expect(source.css).toContain(` dynamic${METADATA_DELIMETER}true`);
   });
 });

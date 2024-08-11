@@ -96,15 +96,7 @@ test.describe('Dom', () => {
       expect(display).toBe('block');
     });
 
-    test('should allow inherited polyfilled properties to inherit', async () => {
-      const positionAnchor = await readProperty(
-        '#dom-test-child',
-        'position-anchor',
-      );
-      expect(positionAnchor).toBe('--anchor');
-    });
-
-    test('should not allow non-inherited polyfilled properties to inherit', async () => {
+    test('should not allow polyfilled properties to inherit', async () => {
       const anchorScope = await readProperty('#dom-test-child', 'anchor-scope');
       expect(anchorScope).toBeNull();
     });

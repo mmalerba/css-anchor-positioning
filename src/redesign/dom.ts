@@ -1,9 +1,10 @@
 import { type VirtualElement } from '@floating-ui/dom';
+import { deserializeMetadata, METADATA_DELIMETER } from './preprocess.js';
 import {
-  POLYFILL_CONFIG_BY_PROPERTY,
+  POLYFILLED_PROPERTIES,
   type PolyfilledProperty,
 } from './utils/properties.js';
-import { makeCssId, type Uuid, UUID_PREFIX } from './utils/uuid.js';
+import { makeCssId, type Uuid } from './utils/uuid.js';
 
 /** Represents a CSS selector with element and pseudo-element parts. */
 export interface Selector {
@@ -50,21 +51,18 @@ export class Dom {
   /** Gets the computed value of a CSS property. */
   getCssPopertyValue(element: HTMLElement | PseudoElement, property: string) {
     // Read the computed value from the polyfilled custom property.
-    const { customProperty, inherit } = POLYFILL_CONFIG_BY_PROPERTY.get(
-      property as PolyfilledProperty,
-    ) ?? { customProperty: property, inherit: true };
-    const [computedValue, selectorId] = this.getComputedStyle(element)
+    const customProperty =
+      POLYFILLED_PROPERTIES.get(property as PolyfilledProperty) ?? property;
+    const [computedValue, serlializedMetadata] = this.getComputedStyle(element)
       .getPropertyValue(customProperty)
       .trim()
-      .split(` ${UUID_PREFIX}`);
-    if (inherit) {
+      .split(` ${METADATA_DELIMETER} `);
+    if (!serlializedMetadata) {
       return computedValue;
     }
 
-    // If the property is not inherited, verify that the selector the value came
-    // from actually selects this element.
-    const uuid = `${UUID_PREFIX}${selectorId}` as Uuid;
-    const selector = this.selectorsByUuid.get(uuid);
+    const metadata = deserializeMetadata(serlializedMetadata);
+    const selector = this.selectorsByUuid.get(metadata.selector);
     if (selector && this.matchesSelector(element, selector)) {
       return computedValue;
     }

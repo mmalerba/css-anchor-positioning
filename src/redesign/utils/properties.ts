@@ -13,7 +13,7 @@ export type Percent = `${number}%`;
 export type CalcExpression = `calc(${string})`;
 
 /** CSS properties that we polyfill. */
-export type PolyfilledProperty = KeyType<typeof POLYFILL_CONFIG_BY_PROPERTY>;
+export type PolyfilledProperty = KeyType<typeof POLYFILLED_PROPERTIES>;
 
 /** A property used to specify an inset. */
 export type InsetProperty = KeyType<typeof INSET_PROPERTIES>;
@@ -21,11 +21,17 @@ export type InsetProperty = KeyType<typeof INSET_PROPERTIES>;
 /** A property used to specify a size. */
 export type SizingProperty = KeyType<typeof SIZING_PROPERTIES>;
 
-/** An anchor name. */
+/** An `anchor-name` value. */
 export type AnchorName = DashedIdent | 'none';
 
-/** An anchor name. */
+/** A `position-anchor` value. */
+export type PositionAnchor = DashedIdent | 'auto';
+
+/** An `anchor-scope` value. */
 export type AnchorScope = DashedIdent | 'all' | 'none';
+
+/** An anchor specifier value used in an anchor function. */
+export type AnchorSpecifier = AnchorName | 'implicit';
 
 /** A keyword value for the `anchor()` function side parameter */
 export type AnchorSideKeyword = KeyType<typeof ANCHOR_SIDE_VALUES>;
@@ -35,14 +41,6 @@ export type AnchorSide = AnchorSideKeyword | Percent | CalcExpression;
 
 /** A value for the `anchor-size()` function size parameter */
 export type AnchorSize = KeyType<typeof ANCHOR_SIZE_VALUES>;
-
-/** Data needed to polyfill a property with a custom property. */
-export interface PolyfilledPropertyConfig {
-  /** Custom property that the property's value is shifted into. */
-  customProperty: string;
-  /** Whether the property should be inherited down the DOM. */
-  inherit?: boolean;
-}
 
 /** List of properties used to specify insets. */
 export const INSET_PROPERTIES = new Set([
@@ -92,45 +90,32 @@ export const ANCHOR_SIZE_VALUES = new Set([
   'self-inline',
 ] as const);
 
-/** List of anchor position properties that inherit. */
-const INHERITED_ANCHOR_PROPERTIES = new Set(['position-anchor'] as const);
-
-/** List of anchor position properties that do not inherit. */
-const NON_INHERITED_ANCHOR_PROPERTIES = [
+/** List of anchor position properties. */
+const ANCHOR_PROPERTIES = [
   'anchor-name',
   'anchor-scope',
+  'position-anchor',
 ] as const;
 
-/**
- * Map of CSS properties that we polyfill, either to support unknown properties
- * or unknown property values.
- */
-export const POLYFILL_CONFIG_BY_PROPERTY = new Map(
-  [
-    [
-      ...INSET_PROPERTIES,
-      ...SIZING_PROPERTIES,
-      ...NON_INHERITED_ANCHOR_PROPERTIES,
-    ]
-      .flat()
-      .map(
-        (property) =>
-          [
-            property,
-            {
-              customProperty: makeCssProperty(property),
-            } as PolyfilledPropertyConfig,
-          ] as const,
-      ),
-    [...INHERITED_ANCHOR_PROPERTIES].map(
-      (property) =>
-        [
-          property,
-          {
-            customProperty: makeCssProperty(property),
-            inherit: true,
-          } as PolyfilledPropertyConfig,
-        ] as const,
-    ),
-  ].flat(),
+/** Map of CSS properties that we polyfill to custom properties. */
+export const POLYFILLED_PROPERTIES = new Map(
+  [...INSET_PROPERTIES, ...SIZING_PROPERTIES, ...ANCHOR_PROPERTIES].map(
+    (property) => [property, makeCssProperty(property)] as const,
+  ),
 );
+
+function isDashedIdent(value: string): value is DashedIdent {
+  return value.startsWith('--');
+}
+
+export function isAnchorName(value: string): value is AnchorName {
+  return isDashedIdent(value) || value === 'none';
+}
+
+export function isPositionAnchor(value: string): value is PositionAnchor {
+  return isDashedIdent(value) || value === 'auto';
+}
+
+export function isAnchorScope(value: string): value is AnchorScope {
+  return isDashedIdent(value) || value === 'all' || value === 'none';
+}

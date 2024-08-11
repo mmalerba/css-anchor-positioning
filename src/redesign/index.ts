@@ -3,7 +3,7 @@ import { preprocessSources } from './preprocess.js';
 import { readCssSources, writeCssSources } from './source.js';
 
 export async function run() {
-  // Preprocess the CSS, shifting properties that need to be polyfilled into
+  // Preprocess the CSS, copying properties that need to be polyfilled into
   // custom properties.
   const sources = await readCssSources();
   const { selectorsByUuid, selectorsByProperty } = preprocessSources(sources);
