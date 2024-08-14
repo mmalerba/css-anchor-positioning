@@ -1,5 +1,14 @@
 import * as csstree from 'css-tree';
 import {
+  ANCHOR_SIDE_VALUES,
+  ANCHOR_SIZE_VALUES,
+  AnchorSide,
+  AnchorSideKeyword,
+  AnchorSize,
+  AnchorSpecifier,
+  isAnchorSpecifier,
+} from './definitions.js';
+import {
   generateCss,
   isFunction,
   isIdentifier,
@@ -11,15 +20,6 @@ import {
   parseCssValue,
   replace,
 } from './utils/ast.js';
-import {
-  ANCHOR_SIDE_VALUES,
-  ANCHOR_SIZE_VALUES,
-  AnchorSide,
-  AnchorSideKeyword,
-  AnchorSize,
-  AnchorSpecifier,
-  isAnchorName,
-} from './utils/properties.js';
 import {
   makeCssProperty,
   makeUuid,
@@ -178,11 +178,7 @@ function parseAnchorFunction(
  * spceifier cannot be parsed.
  */
 function parseAnchorSpecifier(node: csstree.CssNode): AnchorSpecifier | null {
-  if (
-    node &&
-    isIdentifier(node) &&
-    (isAnchorName(node.name) || node.name === 'implicit')
-  ) {
+  if (node && isIdentifier(node) && isAnchorSpecifier(node.name)) {
     return node.name;
   }
   return null;

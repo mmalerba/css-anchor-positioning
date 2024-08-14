@@ -1,4 +1,4 @@
-import { type DashedIdent } from './properties.js';
+import { type DashedIdent } from '../definitions.js';
 
 /** Global counter for making Uuids. */
 let nextId = 0;
@@ -18,6 +18,7 @@ export type UuidAttribute = `data-${string}-${typeof UUID_PREFIX_ALT}${number}`;
 /** A unique CSS property. */
 export type UuidCssProperty = `${DashedIdent}-${Uuid}`;
 
+/** A unique CSS class or id. */
 export type UuidCssId = `${string}-${Uuid}`;
 
 /** Create a unique id. */
@@ -35,6 +36,7 @@ export function makeCssProperty(name: string): UuidCssProperty {
   return `--${name}-${makeUuid()}`;
 }
 
+/** Create a unique CSS class or id. */
 export function makeCssId(name: string): UuidCssId {
   return `${name}-${makeUuid()}`;
 }

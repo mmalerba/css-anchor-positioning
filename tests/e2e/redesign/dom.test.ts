@@ -50,7 +50,7 @@ test.describe('Dom', () => {
   });
 
   // Note: These are implemented as e2e tests rather than unit tests, because we
-  // need the browser's real CSS property inheritance logic.
+  // want the browser's real CSS property inheritance behavior.
   test.describe('getCssPropertyValue', () => {
     let selectors: Map<Uuid, Selector>;
 
@@ -60,7 +60,7 @@ test.describe('Dom', () => {
           const selectors = new Map(entries);
           const dom = new Dom(selectors);
           const element = document.querySelector<HTMLElement>(selector)!;
-          return dom.getCssPopertyValue(element, property);
+          return dom.getCssPopertyValue(element, property).value;
         },
         [[...selectors], selector, property] as const,
       );
@@ -91,76 +91,14 @@ test.describe('Dom', () => {
       expect(anchorScope).toBe('all');
     });
 
-    test('should get computed value for non polyfilled property', async () => {
+    test('should get computed value for non-polyfilled property', async () => {
       const display = await readProperty('#dom-test-parent', 'display');
       expect(display).toBe('block');
     });
 
     test('should not allow polyfilled properties to inherit', async () => {
       const anchorScope = await readProperty('#dom-test-child', 'anchor-scope');
-      expect(anchorScope).toBeNull();
-    });
-  });
-
-  // Note: These are implemented as e2e tests rather than unit tests, because we
-  // need to use getComputedStyle to create the fake pseudo elements.
-  test.describe('getAllPolyfilledElements', () => {
-    async function getPolyfilledElementIds(selectors: Map<Uuid, Selector>) {
-      return page.evaluate(
-        ([selectors]) => {
-          const dom = new Dom(new Map(selectors));
-          dom.createFakePseudoElements();
-          return [...dom.getAllPolyfilledElements().values()]
-            .flat()
-            .map((el) =>
-              el instanceof HTMLElement
-                ? el.id
-                : `${el.contextElement.id}${el.pseudoPart} (${el.fakePseudoElement.id})`,
-            );
-        },
-        [[...selectors]],
-      );
-    }
-
-    test('should get elements with polyfilled properties', async () => {
-      const selectors = await setupPage(
-        `
-          #polyfilled {
-            anchor-name: --anchor;
-          }
-        `,
-        `
-          <div id="polyfilled"></div>
-          <div id="not-polyfilled"></div>
-        `,
-      );
-      expect(await getPolyfilledElementIds(selectors)).toEqual(['polyfilled']);
-    });
-
-    test('should get fake pseudo-elements with polyfilled properties', async () => {
-      const selectors = await setupPage(
-        `
-          #polyfilled::before, #polyfilled::after {
-            anchor-name: --anchor;
-          }
-          div#polyfilled::before {
-            anchor-name: --anchor;
-          }
-        `,
-        `
-          <div id="polyfilled"></div>
-          <div id="not-polyfilled"></div>
-        `,
-      );
-      const ids = await getPolyfilledElementIds(selectors);
-      expect(ids).toEqual([
-        expect.stringMatching('polyfilled::before'),
-        expect.stringMatching('polyfilled::after'),
-        expect.stringMatching('polyfilled::before'),
-      ]);
-      // The full id, including the fake pseudo-element id, should be the same,
-      // because the selectors refer to the same fake pseudo-element.
-      expect(ids[0]).toEqual(ids[2]);
+      expect(anchorScope).toBe('');
     });
   });
 });

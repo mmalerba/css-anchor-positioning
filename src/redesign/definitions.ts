@@ -1,5 +1,6 @@
-import { makeCssProperty } from './uuid.js';
+import { makeCssProperty } from './utils/uuid.js';
 
+/** Extracts the key type from a map. */
 type KeyType<T> =
   T extends Map<infer K, any> ? K : T extends Set<infer K> ? K : never;
 
@@ -104,18 +105,27 @@ export const POLYFILLED_PROPERTIES = new Map(
   ),
 );
 
+/** Checks if the given string is a dashed identifier. */
 function isDashedIdent(value: string): value is DashedIdent {
   return value.startsWith('--');
 }
 
+/** Checks if the given string is an anchor-name. */
 export function isAnchorName(value: string): value is AnchorName {
   return isDashedIdent(value) || value === 'none';
 }
 
+/** Checks if the given string is an anchor specifier. */
+export function isAnchorSpecifier(value: string): value is AnchorSpecifier {
+  return isAnchorName(value) || value === 'implicit';
+}
+
+/** Checks if the given string is a position-anchor. */
 export function isPositionAnchor(value: string): value is PositionAnchor {
   return isDashedIdent(value) || value === 'auto';
 }
 
+/** Checks if the given string is an anchor-scope. */
 export function isAnchorScope(value: string): value is AnchorScope {
   return isDashedIdent(value) || value === 'all' || value === 'none';
 }

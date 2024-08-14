@@ -1,9 +1,13 @@
 import { type VirtualElement } from '@floating-ui/dom';
-import { deserializeMetadata, METADATA_DELIMETER } from './preprocess.js';
 import {
   POLYFILLED_PROPERTIES,
   type PolyfilledProperty,
-} from './utils/properties.js';
+} from './definitions.js';
+import {
+  deserializeMetadata,
+  METADATA_DELIMETER,
+  ValueMetadata,
+} from './preprocess.js';
 import { makeCssId, type Uuid } from './utils/uuid.js';
 
 /** Represents a CSS selector with element and pseudo-element parts. */
@@ -49,7 +53,10 @@ export class Dom {
     | undefined;
 
   /** Gets the computed value of a CSS property. */
-  getCssPopertyValue(element: HTMLElement | PseudoElement, property: string) {
+  getCssPopertyValue(
+    element: HTMLElement | PseudoElement,
+    property: string,
+  ): { value: string; metadata?: ValueMetadata } {
     // Read the computed value from the polyfilled custom property.
     const customProperty =
       POLYFILLED_PROPERTIES.get(property as PolyfilledProperty) ?? property;
@@ -58,15 +65,15 @@ export class Dom {
       .trim()
       .split(` ${METADATA_DELIMETER} `);
     if (!serlializedMetadata) {
-      return computedValue;
+      return { value: computedValue };
     }
 
     const metadata = deserializeMetadata(serlializedMetadata);
     const selector = this.selectorsByUuid.get(metadata.selector);
     if (selector && this.matchesSelector(element, selector)) {
-      return computedValue;
+      return { value: computedValue, metadata };
     }
-    return null;
+    return { value: '' };
   }
 
   /** Checks whether the given element matches the given selector. */
@@ -103,7 +110,7 @@ export class Dom {
     // for now, we'll replace them once we create the fake pseudo-elements.
     this.elementsBySelector = new Map();
     const pseudoSelectors: (Selector & { pseudoPart: string })[] = [];
-    for (const [uuid, selector] of this.selectorsByUuid) {
+    for (const selector of this.selectorsByUuid.values()) {
       this.elementsBySelector.set(selector, [
         ...document.querySelectorAll<HTMLElement>(selector.elementPart),
       ]);
@@ -143,7 +150,9 @@ export class Dom {
     const allRealPseudoElementsSelectors = pseudoSelectors
       .map(({ full }) => full)
       .join(',');
-    styles.push(`${allRealPseudoElementsSelectors} { display: none; }`);
+    if (allRealPseudoElementsSelectors) {
+      styles.push(`${allRealPseudoElementsSelectors} { display: none; }`);
+    }
     const sheet = document.createElement('style');
     sheet.id = FAKE_PSEUDO_ELEMENT_STYLES_ID;
     sheet.innerHTML = styles.join('\n');
@@ -288,7 +297,9 @@ export class Dom {
   private findFirstScrollingElement(element: HTMLElement) {
     let currentElement: HTMLElement | null = element;
     while (currentElement) {
-      if (this.getCssPopertyValue(currentElement, 'overflow') === 'scroll') {
+      if (
+        this.getCssPopertyValue(currentElement, 'overflow').value === 'scroll'
+      ) {
         return currentElement;
       }
       currentElement = currentElement.parentElement;

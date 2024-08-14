@@ -1,5 +1,16 @@
 import * as csstree from 'css-tree';
 
+import {
+  INSET_PROPERTIES,
+  InsetProperty,
+  isAnchorName,
+  isAnchorScope,
+  isPositionAnchor,
+  POLYFILLED_PROPERTIES,
+  SIZING_PROPERTIES,
+  SizingProperty,
+  type PolyfilledProperty,
+} from './definitions.js';
 import { type Selector } from './dom.js';
 import { parseAnchorFunctions, ValueWithAnchorFunctions } from './parse.js';
 import { type CssSource } from './source.js';
@@ -11,17 +22,6 @@ import {
   isSelectorList,
   parseCss,
 } from './utils/ast.js';
-import {
-  INSET_PROPERTIES,
-  InsetProperty,
-  isAnchorName,
-  isAnchorScope,
-  isPositionAnchor,
-  POLYFILLED_PROPERTIES,
-  SIZING_PROPERTIES,
-  SizingProperty,
-  type PolyfilledProperty,
-} from './utils/properties.js';
 import { makeUuid, type Uuid } from './utils/uuid.js';
 
 /** Delimiter used to attach metadata to custom property values. */
@@ -210,12 +210,14 @@ function polyfillProperty(
   return true;
 }
 
+/** Serializes the metadata for a value. */
 function serializeMetadata(metadata: ValueMetadata): string {
   return Object.entries(metadata)
     .map(([key, value]) => `${key}${METADATA_DELIMETER}${value}`)
     .join(' ');
 }
 
+/** Deserializes the metadata for a value. */
 export function deserializeMetadata(
   serlializedMetadata: string,
 ): ValueMetadata {
