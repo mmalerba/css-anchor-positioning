@@ -1,6 +1,8 @@
 import * as csstree from 'css-tree';
 
 import {
+  ANCHOR_FUNCTION_NAME,
+  ANCHOR_SIZE_FUNCTION_NAME,
   INSET_PROPERTIES,
   InsetProperty,
   isAnchorName,
@@ -165,6 +167,7 @@ function polyfillProperty(
   if (value.includes('var(')) {
     metadata.dynamic = true;
   } else {
+    let isInsetProperty: boolean;
     if (property === 'anchor-name') {
       polyfilledValue = isAnchorName(value) ? value : null;
     } else if (property === 'position-anchor') {
@@ -172,11 +175,14 @@ function polyfillProperty(
     } else if (property === 'anchor-scope') {
       polyfilledValue = isAnchorScope(value) ? value : null;
     } else if (
-      (INSET_PROPERTIES.has(property as InsetProperty) ||
+      ((isInsetProperty = INSET_PROPERTIES.has(property as InsetProperty)) ||
         SIZING_PROPERTIES.has(property as SizingProperty)) &&
       CONTAINS_ANCHORS_PATTERN.test(value)
     ) {
-      const valueWithAnchors = parseAnchorFunctions(node.value);
+      const valueWithAnchors = parseAnchorFunctions(
+        node.value,
+        isInsetProperty ? ANCHOR_FUNCTION_NAME : ANCHOR_SIZE_FUNCTION_NAME,
+      );
       if (valueWithAnchors) {
         metadata.parsed = valueWithAnchors.uuid;
         anchorValuesByUuid.set(valueWithAnchors.uuid, valueWithAnchors);

@@ -43,6 +43,12 @@ export type AnchorSide = AnchorSideKeyword | Percent | CalcExpression;
 /** A value for the `anchor-size()` function size parameter */
 export type AnchorSize = KeyType<typeof ANCHOR_SIZE_VALUES>;
 
+/** The name of the `anchor()` function. */
+export const ANCHOR_FUNCTION_NAME = 'anchor';
+
+/** The name of the `anchor-size()` function. */
+export const ANCHOR_SIZE_FUNCTION_NAME = 'anchor-size';
+
 /** List of properties used to specify insets. */
 export const INSET_PROPERTIES = new Set([
   'left',

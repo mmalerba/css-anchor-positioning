@@ -53,7 +53,7 @@ export class Dom {
     | undefined;
 
   /** Gets the computed value of a CSS property. */
-  getCssPopertyValue(
+  getCssPropertyValue(
     element: HTMLElement | PseudoElement,
     property: string,
   ): { value: string; metadata?: ValueMetadata } {
@@ -298,7 +298,7 @@ export class Dom {
     let currentElement: HTMLElement | null = element;
     while (currentElement) {
       if (
-        this.getCssPopertyValue(currentElement, 'overflow').value === 'scroll'
+        this.getCssPropertyValue(currentElement, 'overflow').value === 'scroll'
       ) {
         return currentElement;
       }

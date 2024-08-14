@@ -1,6 +1,8 @@
 import * as csstree from 'css-tree';
 import {
+  ANCHOR_FUNCTION_NAME,
   ANCHOR_SIDE_VALUES,
+  ANCHOR_SIZE_FUNCTION_NAME,
   ANCHOR_SIZE_VALUES,
   AnchorSide,
   AnchorSideKeyword,
@@ -26,12 +28,6 @@ import {
   Uuid,
   type UuidCssProperty,
 } from './utils/uuid.js';
-
-/** The name of the `anchor()` function. */
-const ANCHOR_FUNCTION_NAME = 'anchor';
-
-/** The name of the `anchor-size()` function. */
-const ANCHOR_SIZE_FUNCTION_NAME = 'anchor-size';
 
 /** Represents an instance of the `anchor()` functiom. */
 interface AnchorFunction {
@@ -81,6 +77,7 @@ export interface ValueWithAnchorFunctions {
  */
 export function parseAnchorFunctions(
   value: string | csstree.Value | csstree.Raw,
+  functionName: string,
 ): ValueWithAnchorFunctions | null {
   const ast = typeof value === 'string' ? parseCssValue(value) : value;
   if (isValue(ast)) {
@@ -92,10 +89,7 @@ export function parseAnchorFunctions(
     csstree.walk(ast, {
       visit: 'Function',
       enter: function (node) {
-        if (
-          node.name === ANCHOR_FUNCTION_NAME ||
-          node.name === ANCHOR_SIZE_FUNCTION_NAME
-        ) {
+        if (node.name === functionName) {
           const anchorFunction = parseAnchorFunction(node);
           if (anchorFunction) {
             valueWithAnchors.anchorFunctions.push(anchorFunction);
@@ -135,7 +129,7 @@ function parseAnchorFunction(
   // Remove the comma operator and serialize the fallback value.
   children.shift();
   const fallbackValue = children.map(generateCss).join('');
-  const fallbackData = fallbackValue ? { fallbackValue } : '';
+  const fallbackData = fallbackValue ? { fallbackValue } : {};
 
   // Parse the anchor function arguments.
   const anchorSpecifier =

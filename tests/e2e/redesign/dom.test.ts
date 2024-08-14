@@ -60,7 +60,7 @@ test.describe('Dom', () => {
           const selectors = new Map(entries);
           const dom = new Dom(selectors);
           const element = document.querySelector<HTMLElement>(selector)!;
-          return dom.getCssPopertyValue(element, property).value;
+          return dom.getCssPropertyValue(element, property).value;
         },
         [[...selectors], selector, property] as const,
       );

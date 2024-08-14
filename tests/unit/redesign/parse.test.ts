@@ -11,7 +11,7 @@ const CUSTOM_PROPERTY_PATTERN = new RegExp(
 
 describe('parseAnchors', () => {
   it('should parse `anchor()` function', () => {
-    const value = parseAnchorFunctions(`anchor(--anchor top)`);
+    const value = parseAnchorFunctions(`anchor(--anchor top)`, 'anchor');
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
       polyfilledValue: expect.stringMatching(POLYFILLED_VALUE_PATTERN),
@@ -27,7 +27,10 @@ describe('parseAnchors', () => {
   });
 
   it('should parse `anchor-size()` function', () => {
-    const value = parseAnchorFunctions(`anchor-size(--anchor width)`);
+    const value = parseAnchorFunctions(
+      `anchor-size(--anchor width)`,
+      'anchor-size',
+    );
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
       polyfilledValue: expect.stringMatching(POLYFILLED_VALUE_PATTERN),
@@ -45,6 +48,7 @@ describe('parseAnchors', () => {
   it('should parse multiple anchor functions', () => {
     const value = parseAnchorFunctions(
       `anchor(--anchor top) 5px anchor(--other bottom)`,
+      'anchor',
     );
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
@@ -71,7 +75,7 @@ describe('parseAnchors', () => {
   });
 
   it('should parse anchor function with fallback', () => {
-    const value = parseAnchorFunctions(`anchor(--anchor top, 10px)`);
+    const value = parseAnchorFunctions(`anchor(--anchor top, 10px)`, 'anchor');
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
       polyfilledValue: expect.stringMatching(POLYFILLED_VALUE_PATTERN),
@@ -88,7 +92,10 @@ describe('parseAnchors', () => {
   });
 
   it('should parse anchor function inside calc', () => {
-    const value = parseAnchorFunctions(`calc(2*anchor(--anchor top))`);
+    const value = parseAnchorFunctions(
+      `calc(2*anchor(--anchor top))`,
+      'anchor',
+    );
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
       polyfilledValue: expect.stringMatching(
@@ -106,7 +113,7 @@ describe('parseAnchors', () => {
   });
 
   it('should parse anchor function with implicit anchor', () => {
-    const value = parseAnchorFunctions(`anchor(top)`);
+    const value = parseAnchorFunctions(`anchor(top)`, 'anchor');
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
       polyfilledValue: expect.stringMatching(POLYFILLED_VALUE_PATTERN),
@@ -122,7 +129,7 @@ describe('parseAnchors', () => {
   });
 
   it('should parse anchor function with side percentage', () => {
-    const value = parseAnchorFunctions(`anchor(--anchor 8%)`);
+    const value = parseAnchorFunctions(`anchor(--anchor 8%)`, 'anchor');
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
       polyfilledValue: expect.stringMatching(POLYFILLED_VALUE_PATTERN),
@@ -140,6 +147,7 @@ describe('parseAnchors', () => {
   it('should parse anchor function with side calc', () => {
     const value = parseAnchorFunctions(
       `anchor(--anchor calc((2/calc(2))*25%))`,
+      'anchor',
     );
     expect(value).toEqual({
       uuid: expect.stringMatching(UUID_PATTERN),
@@ -156,27 +164,38 @@ describe('parseAnchors', () => {
   });
 
   it('should not parse value with no anchor functions', () => {
-    const value = parseAnchorFunctions(`10%`);
+    const value = parseAnchorFunctions(`10%`, 'anchor');
     expect(value).toBeNull();
   });
 
   it('should not parse anchor with invalid name', () => {
-    const value = parseAnchorFunctions(`anchor(invalid top)`);
+    const value = parseAnchorFunctions(`anchor(invalid top)`, 'anchor');
     expect(value).toBeNull();
   });
 
   it('should not parse anchor with invalid side', () => {
-    const value = parseAnchorFunctions(`anchor(--anchor invalid)`);
+    const value = parseAnchorFunctions(`anchor(--anchor invalid)`, 'anchor');
     expect(value).toBeNull();
   });
 
   it('should not parse anchor with invalid size', () => {
-    const value = parseAnchorFunctions(`anchor-size(--anchor invalid)`);
+    const value = parseAnchorFunctions(
+      `anchor-size(--anchor invalid)`,
+      'anchor-size',
+    );
     expect(value).toBeNull();
   });
 
   it('should not parse anchor with non-percent units in side calc', () => {
-    const value = parseAnchorFunctions(`anchor(--anchor calc(2*25px))`);
+    const value = parseAnchorFunctions(
+      `anchor(--anchor calc(2*25px))`,
+      'anchor',
+    );
+    expect(value).toBeNull();
+  });
+
+  it('should not parse other anchor functions', () => {
+    const value = parseAnchorFunctions(`anchor(--anchor top)`, 'anchor-size');
     expect(value).toBeNull();
   });
 });

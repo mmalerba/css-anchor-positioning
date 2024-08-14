@@ -1,5 +1,7 @@
 import { InsetProperty, SizingProperty } from '../parse.js';
 import {
+  ANCHOR_FUNCTION_NAME,
+  ANCHOR_SIZE_FUNCTION_NAME,
   AnchorName,
   AnchorScope,
   INSET_PROPERTIES,
@@ -49,7 +51,8 @@ export function resolveAnchorProperties(
   const elementsBySelector = dom.getAllPolyfilledElements();
   for (const [property, selectors] of selectorsByProperty) {
     for (const element of elementsBySelector.get(selectors[0]) ?? []) {
-      let { value, metadata } = dom.getCssPopertyValue(element, property);
+      let isInsetProperty: boolean;
+      let { value, metadata } = dom.getCssPropertyValue(element, property);
       if (property === 'anchor-name') {
         value = !metadata?.dynamic || isAnchorName(value) ? value : '';
         if (value && value !== 'none') {
@@ -66,12 +69,15 @@ export function resolveAnchorProperties(
           addToMapList(elementsByPositionAnchor, value, element);
         }
       } else if (
-        INSET_PROPERTIES.has(property as InsetProperty) ||
+        (isInsetProperty = INSET_PROPERTIES.has(property as InsetProperty)) ||
         SIZING_PROPERTIES.has(property as SizingProperty)
       ) {
         let valueWithAnchors: ValueWithAnchorFunctions | null | undefined;
         if (metadata?.dynamic) {
-          valueWithAnchors = parseAnchorFunctions(value);
+          valueWithAnchors = parseAnchorFunctions(
+            value,
+            isInsetProperty ? ANCHOR_FUNCTION_NAME : ANCHOR_SIZE_FUNCTION_NAME,
+          );
         } else if (metadata?.parsed) {
           valueWithAnchors = anchorValuesByUuid.get(metadata.parsed);
         }
