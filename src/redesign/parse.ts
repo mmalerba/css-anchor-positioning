@@ -10,6 +10,7 @@ import {
   AnchorSpecifier,
   isAnchorSpecifier,
 } from './definitions.js';
+import { PseudoElement } from './dom.js';
 import {
   generateCss,
   isFunction,
@@ -36,11 +37,13 @@ interface AnchorFunction {
   /** The property used as a placeholder for the resolved function value. */
   customProperty: UuidCssProperty;
   /** The anchor specifier passed to the function. */
-  anchorSpecifier: AnchorSpecifier;
+  anchorSpecifier?: AnchorSpecifier;
   /** The side passed to the function. */
   side: AnchorSide;
   /** The fallback value for the function. */
   fallbackValue?: string;
+  /** The anchor element this function is anchored to. */
+  anchor?: HTMLElement | PseudoElement;
 }
 
 /** Represents an instance of the `anchor-size()` function. */
@@ -50,11 +53,13 @@ interface AnchorSizeFunction {
   /** The property used as a placeholder for the resolved function value. */
   customProperty: UuidCssProperty;
   /** The anchor specifier passed to the function. */
-  anchorSpecifier: AnchorSpecifier;
+  anchorSpecifier?: AnchorSpecifier;
   /** The size passed to the function. */
   size: AnchorSize;
   /** The fallback value for the function. */
   fallbackValue?: string;
+  /** The anchor element this function is anchored to. */
+  anchor?: HTMLElement | PseudoElement;
 }
 
 /** Represents a value containing one or more anchor functions. */
@@ -133,9 +138,9 @@ function parseAnchorFunction(
 
   // Parse the anchor function arguments.
   const anchorSpecifier =
-    args[1] === undefined ? 'implicit' : parseAnchorSpecifier(args[0]);
+    args[1] === undefined ? undefined : parseAnchorSpecifier(args[0]);
   const sideOrSizeNode = args[1] === undefined ? args[0] : args[1];
-  if (!anchorSpecifier) {
+  if (anchorSpecifier === null) {
     return null;
   }
 

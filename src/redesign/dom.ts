@@ -1,4 +1,4 @@
-import { type VirtualElement } from '@floating-ui/dom';
+import { platform, type VirtualElement } from '@floating-ui/dom';
 import {
   POLYFILLED_PROPERTIES,
   type PolyfilledProperty,
@@ -54,7 +54,7 @@ export class Dom {
 
   /** Gets the computed value of a CSS property. */
   getCssPropertyValue(
-    element: HTMLElement | PseudoElement,
+    element: Element | PseudoElement,
     property: string,
   ): { value: string; metadata?: ValueMetadata } {
     // Read the computed value from the polyfilled custom property.
@@ -77,8 +77,8 @@ export class Dom {
   }
 
   /** Checks whether the given element matches the given selector. */
-  matchesSelector(element: HTMLElement | PseudoElement, selector: Selector) {
-    if (element instanceof HTMLElement) {
+  matchesSelector(element: Element | PseudoElement, selector: Selector) {
+    if (element instanceof Element) {
       return element.matches(selector.full);
     }
     return (
@@ -202,11 +202,104 @@ export class Dom {
     this.elementsBySelector = undefined;
   }
 
+  isAbsolutelyPositioned(el: Element | PseudoElement) {
+    return ['absolute', 'fixed'].includes(
+      this.getCssPropertyValue(el, 'position').value,
+    );
+  }
+
+  /**
+   * A comparison function, usable with `.sort()`, that compares the tree order
+   * of two elements.
+   */
+  compareTreeOrder(
+    a: HTMLElement | PseudoElement,
+    b: HTMLElement | PseudoElement,
+  ): number {
+    const aElement = a instanceof HTMLElement ? a : a.fakePseudoElement;
+    const bElement = b instanceof HTMLElement ? b : b.fakePseudoElement;
+    if (aElement === bElement) {
+      return 0;
+    }
+    const position = aElement.compareDocumentPosition(bElement);
+    return position & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1;
+  }
+
+  precedes(a: HTMLElement | PseudoElement, b: HTMLElement | PseudoElement) {
+    return this.compareTreeOrder(a, b) < 0;
+  }
+
+  contains(parent: Element | PseudoElement, child: Element | PseudoElement) {
+    const parentElement =
+      parent instanceof Element ? parent : parent.fakePseudoElement;
+    const childElement =
+      child instanceof Element ? child : child.fakePseudoElement;
+    return parentElement.contains(childElement);
+  }
+
+  /**
+   * Given a container element and child element, determines if the child
+   * element is a descendant of the container element.
+   */
+  isDescendant(
+    child: HTMLElement | PseudoElement,
+    container: Element | Document,
+  ): boolean {
+    const childElement =
+      child instanceof HTMLElement ? child : child.fakePseudoElement;
+    // Check is to see if child and parent are the same, in this case `contains`
+    // would return `true`, because "a node is contained inside itself."
+    // See: https://developer.mozilla.org/en-US/docs/Web/API/Node/contains
+    if (container === childElement) {
+      return false;
+    }
+    return container.contains(childElement);
+  }
+
+  /**
+   * Gets the containing block for the given element.
+   * See: https://drafts.csswg.org/css-display-4/#containing-block
+   */
+  async getContainingBlock(element: Element | PseudoElement) {
+    const el = element instanceof Element ? element : element.fakePseudoElement;
+    if (!this.isAbsolutelyPositioned(el)) {
+      return this.getFormattingContext(el);
+    }
+
+    let currentParent = el.parentElement;
+    while (currentParent) {
+      if (
+        this.getCssPropertyValue(currentParent, 'position').value !==
+          'static' &&
+        this.getCssPropertyValue(currentParent, 'display').value === 'block'
+      ) {
+        return currentParent;
+      }
+      currentParent = currentParent.parentElement;
+    }
+
+    return el.ownerDocument;
+  }
+
+  getParentElement(element: Element | PseudoElement) {
+    const el = element instanceof Element ? element : element.fakePseudoElement;
+    return el.parentElement;
+  }
+
+  /**
+   * Gets the formatting context for the given element.
+   * See: https://drafts.csswg.org/css-display-4/#formatting-context
+   */
+  private async getFormattingContext(element: Element) {
+    const parent = await platform.getOffsetParent(element);
+    return parent instanceof Element ? parent : parent.document;
+  }
+
   /** Gets the computed styles for the given element. */
   private getComputedStyle(
-    element: HTMLElement | PseudoElement,
+    element: Element | PseudoElement,
   ): CSSStyleDeclaration {
-    return element instanceof HTMLElement
+    return element instanceof Element
       ? getComputedStyle(element)
       : element.computedStyle;
   }

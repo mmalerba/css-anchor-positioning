@@ -1,6 +1,6 @@
 import { Dom } from './dom.js';
 import { preprocessSources } from './preprocess.js';
-import { resolveAnchorProperties } from './resolve.js';
+import { resolveAnchors } from './resolve.js';
 import { readCssSources, writeCssSources } from './source.js';
 
 export async function run() {
@@ -16,11 +16,7 @@ export async function run() {
   dom.createFakePseudoElements();
 
   // Resolve anchor data for all elements.
-  const resolved = resolveAnchorProperties(
-    dom,
-    selectorsByProperty,
-    anchorValuesByUuid,
-  );
+  const resolved = resolveAnchors(dom, selectorsByProperty, anchorValuesByUuid);
 
   // Position elements
 }

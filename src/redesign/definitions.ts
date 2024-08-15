@@ -32,7 +32,7 @@ export type PositionAnchor = DashedIdent | 'auto';
 export type AnchorScope = DashedIdent | 'all' | 'none';
 
 /** An anchor specifier value used in an anchor function. */
-export type AnchorSpecifier = AnchorName | 'implicit';
+export type AnchorSpecifier = DashedIdent | 'implicit';
 
 /** A keyword value for the `anchor()` function side parameter */
 export type AnchorSideKeyword = KeyType<typeof ANCHOR_SIDE_VALUES>;
